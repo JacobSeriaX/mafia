@@ -1,0 +1,230 @@
+/* styles.css */
+
+/* Общие стили */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #1e1e2f;
+    color: #f0f0f0;
+    margin: 0;
+    padding: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+#auth-container, #game-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #2c2c54;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    text-align: center;
+}
+
+.auth-form input {
+    width: 80%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+}
+
+.auth-form button {
+    padding: 10px 20px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #e74c3c;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.auth-form button:hover {
+    background-color: #c0392b;
+}
+
+.auth-form a {
+    color: #3498db;
+    text-decoration: none;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: #34495e;
+    padding: 10px 20px;
+    border-radius: 10px 10px 0 0;
+}
+
+header h1 {
+    margin: 0;
+}
+
+header button {
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #e74c3c;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+header button:hover {
+    background-color: #c0392b;
+}
+
+#room-selection {
+    margin-top: 20px;
+}
+
+#room-selection button, #room-selection input {
+    padding: 10px 15px;
+    margin: 5px;
+    border: none;
+    border-radius: 5px;
+}
+
+#room-selection button {
+    background-color: #2ecc71;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#room-selection button:hover {
+    background-color: #27ae60;
+}
+
+#room-selection input {
+    width: 60%;
+}
+
+#game-room {
+    margin-top: 20px;
+}
+
+#players-list {
+    text-align: left;
+}
+
+#players-ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+#players-ul li {
+    background-color: #34495e;
+    margin: 5px 0;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+#chat-container {
+    margin-top: 20px;
+    text-align: left;
+}
+
+#chat-messages {
+    height: 200px;
+    background-color: #2c3e50;
+    padding: 10px;
+    border-radius: 5px;
+    overflow-y: scroll;
+}
+
+#chat-input {
+    width: 70%;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+}
+
+#send-chat-btn {
+    padding: 10px 15px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #3498db;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#send-chat-btn:hover {
+    background-color: #2980b9;
+}
+
+#game-actions {
+    margin-top: 20px;
+}
+
+#game-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #e67e22;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#game-actions button:hover {
+    background-color: #d35400;
+}
+
+#game-phase {
+    margin-top: 20px;
+}
+
+#game-phase h2 {
+    margin-bottom: 10px;
+}
+
+#phase-content {
+    background-color: #2c3e50;
+    padding: 20px;
+    border-radius: 5px;
+    min-height: 200px;
+}
+
+#phase-actions {
+    margin-top: 20px;
+}
+
+#phase-actions button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #9b59b6;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#phase-actions button:hover {
+    background-color: #8e44ad;
+}
+
+#end-screen {
+    margin-top: 20px;
+}
+
+#end-screen button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #16a085;
+    color: #fff;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+#end-screen button:hover {
+    background-color: #138d75;
+}
