@@ -45,12 +45,18 @@ const phaseActions = document.getElementById('phase-actions');
 const endScreen = document.getElementById('end-screen');
 const gameResult = document.getElementById('game-result');
 const restartGameBtn = document.getElementById('restart-game-btn');
+const leaveRoomBtn = document.getElementById('leave-room-btn'); // Новая кнопка для выхода из комнаты
 
 // Текущий пользователь
 let currentUser = null;
 
 // Текущая комната
 let currentRoom = null;
+
+// Слушатели
+let roomListener = null;
+let gameListener = null;
+let chatListener = null;
 
 // Слушатель аутентификации
 auth.onAuthStateChanged(user => {
@@ -132,6 +138,10 @@ logoutBtn.addEventListener('click', () => {
     auth.signOut()
         .then(() => {
             alert('Вы вышли из системы.');
+            // Если пользователь был в комнате, автоматически покинуть ее
+            if (currentRoom) {
+                leaveRoom();
+            }
         })
         .catch(err => {
             console.error(err);
@@ -139,7 +149,7 @@ logoutBtn.addEventListener('click', () => {
         });
 });
 
-// Создание комнаты с 8-значным числом
+// Создание комнаты с 8-значным числовым ID
 createRoomBtn.addEventListener('click', async () => {
     try {
         let roomId = generateRoomId();
@@ -157,7 +167,6 @@ createRoomBtn.addEventListener('click', async () => {
         await db.collection('rooms').doc(roomId).set({
             host: currentUser.uid,
             players: [currentUser.uid],
-            chat: [],
             gameStarted: false,
             gamePhase: 'waiting',
             roles: {},
@@ -169,6 +178,7 @@ createRoomBtn.addEventListener('click', async () => {
         roomSelection.classList.add('hidden');
         gameRoom.classList.remove('hidden');
         listenToRoomChanges(roomId);
+        listenToChatChanges(roomId); // Запуск слушателя чата
     } catch (err) {
         console.error(err);
         alert(err.message);
@@ -216,6 +226,7 @@ joinRoomBtn.addEventListener('click', async () => {
             roomSelection.classList.add('hidden');
             gameRoom.classList.remove('hidden');
             listenToRoomChanges(roomId);
+            listenToChatChanges(roomId); // Запуск слушателя чата
         } else {
             alert('Комната не найдена.');
         }
@@ -229,14 +240,29 @@ joinRoomBtn.addEventListener('click', async () => {
 function listenToRoomChanges(roomId) {
     const roomRef = db.collection('rooms').doc(roomId);
 
-    roomRef.onSnapshot(doc => {
+    // Отписка от предыдущего слушателя, если есть
+    if (roomListener) {
+        roomListener();
+    }
+
+    roomListener = roomRef.onSnapshot(doc => {
         if (doc.exists) {
             const roomData = doc.data();
             updatePlayersList(roomData.players);
-            updateChat(roomData.chat);
             if (roomData.gameStarted) {
                 gameRoom.classList.add('hidden');
                 startGame(roomId, roomData);
+            }
+            // Обработка, если текущий пользователь был удален из комнаты
+            if (!roomData.players.includes(currentUser.uid)) {
+                alert('Вы были исключены из комнаты.');
+                leaveRoomUI();
+            }
+        } else {
+            // Комната удалена
+            if (currentRoom === roomId) {
+                alert('Комната была удалена.');
+                leaveRoomUI();
             }
         }
     });
@@ -263,13 +289,12 @@ sendChatBtn.addEventListener('click', () => {
     const message = chatInput.value.trim();
     if (!message) return;
 
-    const roomRef = db.collection('rooms').doc(currentRoom);
-    roomRef.update({
-        chat: firebase.firestore.FieldValue.arrayUnion({
-            sender: currentUser.uid,
-            message: message,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        })
+    const chatRef = db.collection('rooms').doc(currentRoom).collection('chat');
+
+    chatRef.add({
+        sender: currentUser.uid,
+        message: message,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
     })
     .then(() => {
         chatInput.value = '';
@@ -280,24 +305,34 @@ sendChatBtn.addEventListener('click', () => {
     });
 });
 
-// Обновление чата
-function updateChat(chat) {
-    chatMessages.innerHTML = '';
-    chat.forEach(chatMsg => {
-        if (!chatMsg) return; // Пропустить пустые сообщения
-        const msgDiv = document.createElement('div');
-        msgDiv.classList.add('chat-message');
-        // Получение имени пользователя
-        db.collection('users').doc(chatMsg.sender).get()
-            .then(doc => {
-                if (doc.exists) {
-                    const userData = doc.data();
-                    msgDiv.innerHTML = `<strong>${userData.username}:</strong> ${chatMsg.message}`;
-                    chatMessages.appendChild(msgDiv);
-                    // Прокрутка вниз
-                    chatMessages.scrollTop = chatMessages.scrollHeight;
-                }
-            });
+// Слушатель чата
+function listenToChatChanges(roomId) {
+    const chatRef = db.collection('rooms').doc(roomId).collection('chat').orderBy('timestamp');
+
+    // Отписка от предыдущего слушателя, если есть
+    if (chatListener) {
+        chatListener();
+    }
+
+    chatListener = chatRef.onSnapshot(snapshot => {
+        chatMessages.innerHTML = '';
+        snapshot.forEach(doc => {
+            const chatMsg = doc.data();
+            if (!chatMsg) return;
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('chat-message');
+            // Получение имени пользователя
+            db.collection('users').doc(chatMsg.sender).get()
+                .then(userDoc => {
+                    if (userDoc.exists) {
+                        const userData = userDoc.data();
+                        msgDiv.innerHTML = `<strong>${userData.username}:</strong> ${chatMsg.message}`;
+                        chatMessages.appendChild(msgDiv);
+                        // Прокрутка вниз
+                        chatMessages.scrollTop = chatMessages.scrollHeight;
+                    }
+                });
+        });
     });
 }
 
@@ -384,10 +419,21 @@ function startGame(roomId, roomData) {
 function listenToGameChanges(roomId) {
     const roomRef = db.collection('rooms').doc(roomId);
 
-    roomRef.onSnapshot(doc => {
+    // Отписка от предыдущего слушателя, если есть
+    if (gameListener) {
+        gameListener();
+    }
+
+    gameListener = roomRef.onSnapshot(doc => {
         if (doc.exists) {
             const roomData = doc.data();
             updateGamePhase(roomData);
+        } else {
+            // Комната удалена
+            if (currentRoom === roomId) {
+                alert('Комната была удалена.');
+                leaveRoomUI();
+            }
         }
     });
 }
@@ -438,13 +484,13 @@ async function processNightActions(roomData) {
     const victim = victims[Math.floor(Math.random() * victims.length)];
 
     // Доктор лечит
-    const saved = players[Math.floor(Math.random() * players.length)];
+    const saved = doctor ? mafia[Math.floor(Math.random() * mafia.length)] : null; // Доктор может лечить мафию или другого игрока
 
     // Комиссар расследует
     const investigateTargets = players.filter(uid => uid !== detective && !roomData.eliminated.includes(uid));
     let investigated = null;
     let investigatedRole = '';
-    if (investigateTargets.length > 0) {
+    if (detective && investigateTargets.length > 0) {
         investigated = investigateTargets[Math.floor(Math.random() * investigateTargets.length)];
         investigatedRole = roles[investigated];
     }
@@ -476,7 +522,7 @@ async function processNightActions(roomData) {
     alert(message);
 
     // Проверка условий победы после ночи
-    checkWinCondition(roomData);
+    await checkWinCondition(roomData);
 
     // Переход к дневной фазе, если игра не закончена
     const updatedRoom = await db.collection('rooms').doc(currentRoom).get();
@@ -570,7 +616,7 @@ async function checkVotes() {
                 alert(`Игрок ${eliminatedData.data().username} был выведен голосованием.`);
             }
             // Проверка условий победы после голосования
-            checkWinCondition(roomData);
+            await checkWinCondition(roomData);
         } else {
             // Ничья, голосование повторяется
             alert('Ничья. Голосование повторяется.');
@@ -658,3 +704,92 @@ restartGameBtn.addEventListener('click', async () => {
 function capitalizeFirstLetter(string) {
     return string.charAt(0).toUpperCase() + string.slice(1);
 }
+
+// Функция для покидания комнаты
+async function leaveRoom() {
+    if (!currentRoom) return;
+
+    try {
+        const roomRef = db.collection('rooms').doc(currentRoom);
+        const roomDoc = await roomRef.get();
+
+        if (!roomDoc.exists) {
+            alert('Комната не существует.');
+            leaveRoomUI();
+            return;
+        }
+
+        const roomData = roomDoc.data();
+
+        // Удаление пользователя из массива игроков
+        await roomRef.update({
+            players: firebase.firestore.FieldValue.arrayRemove(currentUser.uid)
+        });
+
+        // Если пользователь был хозяином, переназначить нового хозяина или удалить комнату
+        if (roomData.host === currentUser.uid) {
+            const remainingPlayers = roomData.players.filter(uid => uid !== currentUser.uid);
+            if (remainingPlayers.length > 0) {
+                // Переназначение нового хозяина
+                const newHost = remainingPlayers[0];
+                await roomRef.update({
+                    host: newHost
+                });
+            } else {
+                // Удаление комнаты, так как нет игроков
+                await roomRef.delete();
+            }
+        }
+
+        // Если пользователь покинул игру, возможно, стоит проверить условия победы
+        if (roomData.gameStarted) {
+            await checkWinCondition(roomData);
+        }
+
+        // Отписка от слушателей
+        if (roomListener) {
+            roomListener();
+            roomListener = null;
+        }
+        if (gameListener) {
+            gameListener();
+            gameListener = null;
+        }
+        if (chatListener) {
+            chatListener();
+            chatListener = null;
+        }
+
+        // Сброс текущей комнаты
+        currentRoom = null;
+
+        // Обновление UI
+        leaveRoomUI();
+
+        alert('Вы покинули комнату.');
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    }
+}
+
+// Функция для обновления UI после покидания комнаты
+function leaveRoomUI() {
+    // Скрыть игровые элементы и показать выбор комнаты
+    gameRoom.classList.add('hidden');
+    gamePhase.classList.add('hidden');
+    endScreen.classList.add('hidden');
+    roomSelection.classList.remove('hidden');
+    currentRoomIdSpan.textContent = '';
+    chatMessages.innerHTML = '';
+    playersUl.innerHTML = '';
+}
+
+// Добавление обработчика для кнопки покидания комнаты
+leaveRoomBtn.addEventListener('click', async () => {
+    const confirmLeave = confirm('Вы уверены, что хотите покинуть комнату?');
+    if (confirmLeave) {
+        await leaveRoom();
+    }
+}
+);

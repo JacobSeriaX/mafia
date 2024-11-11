@@ -1,10 +1,13 @@
 /* styles.css */
 
+/* Подключение веб-шрифта для атмосферного вида */
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@400;700&family=Roboto:wght@300;400;500&display=swap');
+
 /* Общие стили */
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #1e1e2f;
-    color: #f0f0f0;
+    font-family: 'Roboto Slab', serif;
+    background-color: #121212; /* Очень темный фон для создания мрачной атмосферы */
+    color: #e0e0e0; /* Светло-серый цвет текста для контраста */
     margin: 0;
     padding: 0;
 }
@@ -14,102 +17,179 @@ body {
 }
 
 #auth-container, #game-container {
-    max-width: 600px;
+    max-width: 700px;
     margin: 50px auto;
-    padding: 20px;
-    background-color: #2c2c54;
-    border-radius: 10px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    padding: 30px;
+    background-color: #1e1e2f; /* Темный синий фон */
+    border-radius: 15px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.7);
     text-align: center;
 }
 
+#auth-container h2, #game-container header h1 {
+    font-family: 'Roboto Slab', serif;
+    color: #ffdd57; /* Золотистый цвет для заголовков */
+}
+
 .auth-form input {
-    width: 80%;
-    padding: 10px;
-    margin: 10px 0;
+    width: 85%;
+    padding: 12px 20px;
+    margin: 15px 0;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    background-color: #2c2c3e;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+.auth-form input::placeholder {
+    color: #b0b0b0;
 }
 
 .auth-form button {
-    padding: 10px 20px;
-    margin-top: 10px;
+    padding: 12px 25px;
+    margin-top: 15px;
     border: none;
-    border-radius: 5px;
-    background-color: #e74c3c;
-    color: #fff;
+    border-radius: 8px;
+    background-color: #ff6b6b; /* Темно-розовый/красный цвет кнопок */
+    color: #ffffff;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 .auth-form button:hover {
-    background-color: #c0392b;
+    background-color: #ff4757;
+    transform: translateY(-2px);
 }
 
 .auth-form a {
-    color: #3498db;
+    color: #1e90ff; /* Голубой цвет ссылок */
     text-decoration: none;
+    font-weight: 500;
 }
 
+.auth-form a:hover {
+    text-decoration: underline;
+}
+
+/* Заголовки форм */
+.auth-form h3 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    color: #ffdd57;
+}
+
+/* Header */
 header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: #34495e;
-    padding: 10px 20px;
-    border-radius: 10px 10px 0 0;
+    background-color: #1f1f38; /* Темно-синий фон для шапки */
+    padding: 15px 25px;
+    border-radius: 15px 15px 0 0;
 }
 
 header h1 {
     margin: 0;
+    font-size: 28px;
 }
 
 header button {
-    padding: 5px 10px;
+    padding: 8px 18px;
     border: none;
-    border-radius: 5px;
-    background-color: #e74c3c;
-    color: #fff;
+    border-radius: 8px;
+    background-color: #ff6b6b;
+    color: #ffffff;
+    font-size: 14px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 header button:hover {
-    background-color: #c0392b;
+    background-color: #ff4757;
+    transform: translateY(-2px);
 }
 
+/* Выбор комнаты */
 #room-selection {
-    margin-top: 20px;
+    margin-top: 30px;
+}
+
+#room-selection h2 {
+    font-size: 22px;
+    color: #ffdd57;
+    margin-bottom: 20px;
 }
 
 #room-selection button, #room-selection input {
-    padding: 10px 15px;
-    margin: 5px;
+    padding: 12px 20px;
+    margin: 10px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    font-size: 16px;
 }
 
 #room-selection button {
-    background-color: #2ecc71;
-    color: #fff;
+    background-color: #1e90ff; /* Голубой цвет кнопок */
+    color: #ffffff;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #room-selection button:hover {
-    background-color: #27ae60;
+    background-color: #3742fa;
+    transform: translateY(-2px);
 }
 
 #room-selection input {
     width: 60%;
+    background-color: #2c2c3e;
+    color: #ffffff;
 }
 
+#room-selection input::placeholder {
+    color: #b0b0b0;
+}
+
+/* Игровая комната */
 #game-room {
     margin-top: 20px;
+    text-align: left;
+}
+
+#game-room h2 {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 24px;
+    color: #ffdd57;
+}
+
+#leave-room-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 8px;
+    background-color: #ff6b6b;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background-color 0.3s, transform 0.2s;
+}
+
+#leave-room-btn:hover {
+    background-color: #ff4757;
+    transform: translateY(-2px);
 }
 
 #players-list {
-    text-align: left;
+    margin-top: 20px;
+}
+
+#players-list h3 {
+    font-size: 20px;
+    color: #ffdd57;
+    margin-bottom: 10px;
 }
 
 #players-ul {
@@ -118,113 +198,164 @@ header button:hover {
 }
 
 #players-ul li {
-    background-color: #34495e;
+    background-color: #2c2c3e;
     margin: 5px 0;
-    padding: 10px;
-    border-radius: 5px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 16px;
+    color: #ffffff;
 }
 
+/* Чат */
 #chat-container {
-    margin-top: 20px;
-    text-align: left;
+    margin-top: 30px;
+}
+
+#chat-container h3 {
+    font-size: 20px;
+    color: #ffdd57;
+    margin-bottom: 10px;
 }
 
 #chat-messages {
-    height: 200px;
-    background-color: #2c3e50;
-    padding: 10px;
-    border-radius: 5px;
+    height: 250px;
+    background-color: #2c2c3e;
+    padding: 15px;
+    border-radius: 8px;
     overflow-y: scroll;
+    border: 1px solid #444;
+}
+
+.chat-message {
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #444;
+}
+
+.chat-message strong {
+    color: #1e90ff; /* Голубой цвет имен отправителей */
 }
 
 #chat-input {
     width: 70%;
-    padding: 10px;
-    margin-top: 10px;
+    padding: 12px 20px;
+    margin-top: 15px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
+    background-color: #2c2c3e;
+    color: #ffffff;
+    font-size: 16px;
+}
+
+#chat-input::placeholder {
+    color: #b0b0b0;
 }
 
 #send-chat-btn {
-    padding: 10px 15px;
-    margin-top: 10px;
+    padding: 12px 25px;
+    margin-top: 15px;
     border: none;
-    border-radius: 5px;
-    background-color: #3498db;
-    color: #fff;
+    border-radius: 8px;
+    background-color: #1e90ff;
+    color: #ffffff;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #send-chat-btn:hover {
-    background-color: #2980b9;
+    background-color: #3742fa;
+    transform: translateY(-2px);
 }
 
+/* Действия в игре */
 #game-actions {
-    margin-top: 20px;
+    margin-top: 30px;
+    text-align: center;
 }
 
 #game-actions button {
-    padding: 10px 20px;
+    padding: 12px 30px;
     border: none;
-    border-radius: 5px;
-    background-color: #e67e22;
-    color: #fff;
+    border-radius: 8px;
+    background-color: #ff6b6b;
+    color: #ffffff;
+    font-size: 18px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #game-actions button:hover {
-    background-color: #d35400;
+    background-color: #ff4757;
+    transform: translateY(-2px);
 }
 
+/* Фазы игры */
 #game-phase {
-    margin-top: 20px;
+    margin-top: 30px;
+    text-align: center;
 }
 
 #game-phase h2 {
-    margin-bottom: 10px;
+    font-size: 24px;
+    color: #ffdd57;
+    margin-bottom: 15px;
 }
 
 #phase-content {
-    background-color: #2c3e50;
-    padding: 20px;
-    border-radius: 5px;
-    min-height: 200px;
+    background-color: #2c2c3e;
+    padding: 25px;
+    border-radius: 8px;
+    min-height: 250px;
+    color: #e0e0e0;
+    font-size: 18px;
+    border: 1px solid #444;
 }
 
 #phase-actions {
-    margin-top: 20px;
+    margin-top: 25px;
 }
 
 #phase-actions button {
-    padding: 10px 20px;
+    padding: 10px 25px;
     border: none;
-    border-radius: 5px;
-    background-color: #9b59b6;
-    color: #fff;
+    border-radius: 8px;
+    background-color: #1e90ff;
+    color: #ffffff;
+    font-size: 16px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #phase-actions button:hover {
-    background-color: #8e44ad;
+    background-color: #3742fa;
+    transform: translateY(-2px);
 }
 
+/* Экран завершения */
 #end-screen {
-    margin-top: 20px;
+    margin-top: 30px;
+    text-align: center;
+}
+
+#end-screen h2 {
+    font-size: 24px;
+    color: #ffdd57;
+    margin-bottom: 20px;
 }
 
 #end-screen button {
-    padding: 10px 20px;
+    padding: 12px 30px;
     border: none;
-    border-radius: 5px;
+    border-radius: 8px;
     background-color: #16a085;
-    color: #fff;
+    color: #ffffff;
+    font-size: 18px;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: background-color 0.3s, transform 0.2s;
 }
 
 #end-screen button:hover {
-    background-color: #138d75;
+    background-color: #149174;
+    transform: translateY(-2px);
 }
