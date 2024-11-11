@@ -139,74 +139,90 @@ logoutBtn.addEventListener('click', () => {
         });
 });
 
-// Создание комнаты
-createRoomBtn.addEventListener('click', () => {
-    // Генерация уникального ID комнаты
-    const roomId = db.collection('rooms').doc().id;
-    currentRoomIdSpan.textContent = roomId;
+// Создание комнаты с 8-значным числом
+createRoomBtn.addEventListener('click', async () => {
+    try {
+        let roomId = generateRoomId();
+        let roomExists = await checkRoomExists(roomId);
+        
+        // Проверка уникальности ID комнаты
+        while (roomExists) {
+            roomId = generateRoomId();
+            roomExists = await checkRoomExists(roomId);
+        }
 
-    // Создание документа комнаты
-    db.collection('rooms').doc(roomId).set({
-        host: currentUser.uid,
-        players: [currentUser.uid],
-        chat: [],
-        gameStarted: false,
-        gamePhase: 'waiting',
-        roles: {},
-        votes: {},
-        eliminated: []
-    })
-    .then(() => {
+        currentRoomIdSpan.textContent = roomId;
+
+        // Создание документа комнаты
+        await db.collection('rooms').doc(roomId).set({
+            host: currentUser.uid,
+            players: [currentUser.uid],
+            chat: [],
+            gameStarted: false,
+            gamePhase: 'waiting',
+            roles: {},
+            votes: {},
+            eliminated: []
+        });
+
         currentRoom = roomId;
         roomSelection.classList.add('hidden');
         gameRoom.classList.remove('hidden');
         listenToRoomChanges(roomId);
-    })
-    .catch(err => {
+    } catch (err) {
         console.error(err);
         alert(err.message);
-    });
+    }
 });
 
+// Генерация 8-значного числового ID комнаты
+function generateRoomId() {
+    return Math.floor(10000000 + Math.random() * 90000000).toString();
+}
+
+// Проверка существования комнаты с данным ID
+async function checkRoomExists(roomId) {
+    const roomRef = db.collection('rooms').doc(roomId);
+    const doc = await roomRef.get();
+    return doc.exists;
+}
+
 // Присоединение к комнате
-joinRoomBtn.addEventListener('click', () => {
+joinRoomBtn.addEventListener('click', async () => {
     const roomId = roomIdInput.value.trim();
     if (!roomId) {
         alert('Пожалуйста, введите ID комнаты.');
         return;
     }
 
-    const roomRef = db.collection('rooms').doc(roomId);
-    roomRef.get()
-        .then(doc => {
-            if (doc.exists) {
-                const roomData = doc.data();
-                if (roomData.gameStarted) {
-                    alert('Игра уже началась. Нельзя присоединиться.');
-                    return;
-                }
-                if (roomData.players.includes(currentUser.uid)) {
-                    alert('Вы уже присоединились к этой комнате.');
-                    return;
-                }
-                roomRef.update({
-                    players: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
-                })
-                .then(() => {
-                    currentRoom = roomId;
-                    currentRoomIdSpan.textContent = roomId;
-                    roomSelection.classList.add('hidden');
-                    gameRoom.classList.remove('hidden');
-                    listenToRoomChanges(roomId);
-                });
-            } else {
-                alert('Комната не найдена.');
+    try {
+        const roomRef = db.collection('rooms').doc(roomId);
+        const doc = await roomRef.get();
+        if (doc.exists) {
+            const roomData = doc.data();
+            if (roomData.gameStarted) {
+                alert('Игра уже началась. Нельзя присоединиться.');
+                return;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            alert(err.message);
-        });
+            if (roomData.players.includes(currentUser.uid)) {
+                alert('Вы уже присоединились к этой комнате.');
+                return;
+            }
+            await roomRef.update({
+                players: firebase.firestore.FieldValue.arrayUnion(currentUser.uid)
+            });
+            currentRoom = roomId;
+            currentRoomIdSpan.textContent = roomId;
+            roomSelection.classList.add('hidden');
+            gameRoom.classList.remove('hidden');
+            listenToRoomChanges(roomId);
+        } else {
+            alert('Комната не найдена.');
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    }
 });
 
 // Слушатель изменений в комнате
@@ -286,35 +302,32 @@ function updateChat(chat) {
 }
 
 // Начало игры
-startGameBtn.addEventListener('click', () => {
-    const roomRef = db.collection('rooms').doc(currentRoom);
-    roomRef.get()
-        .then(doc => {
-            if (doc.exists) {
-                const roomData = doc.data();
-                if (roomData.host !== currentUser.uid) {
-                    alert('Только хозяин комнаты может начать игру.');
-                    return;
-                }
-                if (roomData.players.length < 4) {
-                    alert('Для начала игры необходимо минимум 4 игрока.');
-                    return;
-                }
-                // Назначение ролей
-                assignRoles(roomData.players)
-                    .then(roles => {
-                        roomRef.update({
-                            roles: roles,
-                            gameStarted: true,
-                            gamePhase: 'night'
-                        });
-                    });
+startGameBtn.addEventListener('click', async () => {
+    try {
+        const roomRef = db.collection('rooms').doc(currentRoom);
+        const doc = await roomRef.get();
+        if (doc.exists) {
+            const roomData = doc.data();
+            if (roomData.host !== currentUser.uid) {
+                alert('Только хозяин комнаты может начать игру.');
+                return;
             }
-        })
-        .catch(err => {
-            console.error(err);
-            alert(err.message);
-        });
+            if (roomData.players.length < 4) {
+                alert('Для начала игры необходимо минимум 4 игрока.');
+                return;
+            }
+            // Назначение ролей
+            const roles = await assignRoles(roomData.players);
+            await roomRef.update({
+                roles: roles,
+                gameStarted: true,
+                gamePhase: 'night'
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        alert(err.message);
+    }
 });
 
 // Назначение ролей
@@ -408,7 +421,7 @@ function handleNightPhase(roomData) {
 }
 
 // Обработка ночных действий
-function processNightActions(roomData) {
+async function processNightActions(roomData) {
     const roles = roomData.roles;
     const players = roomData.players;
     const mafia = players.filter(uid => roles[uid] === 'Мафия');
@@ -440,24 +453,38 @@ function processNightActions(roomData) {
 
     if (victim !== saved) {
         // Жертва умирает
-        db.collection('rooms').doc(currentRoom).update({
+        await db.collection('rooms').doc(currentRoom).update({
             eliminated: firebase.firestore.FieldValue.arrayUnion(victim)
         });
-        message += `Игрок был убит ночью.\n`;
+        const victimData = await db.collection('users').doc(victim).get();
+        if (victimData.exists) {
+            message += `Игрок ${victimData.data().username} был убит ночью.\n`;
+        } else {
+            message += `Игрок был убит ночью.\n`;
+        }
     } else {
         message += `Доктор спас игрока ночью.\n`;
     }
 
     if (investigated) {
-        message += `Комиссар расследовал игрока и узнал, что он ${investigatedRole}.`;
+        const investigatedData = await db.collection('users').doc(investigated).get();
+        if (investigatedData.exists) {
+            message += `Комиссар расследовал игрока ${investigatedData.data().username} и узнал, что он ${investigatedRole}.`;
+        }
     }
 
     alert(message);
 
-    // Переход к дневной фазе
-    db.collection('rooms').doc(currentRoom).update({
-        gamePhase: 'day'
-    });
+    // Проверка условий победы после ночи
+    checkWinCondition(roomData);
+
+    // Переход к дневной фазе, если игра не закончена
+    const updatedRoom = await db.collection('rooms').doc(currentRoom).get();
+    if (updatedRoom.exists && updatedRoom.data().gamePhase !== 'ended') {
+        await db.collection('rooms').doc(currentRoom).update({
+            gamePhase: 'day'
+        });
+    }
 }
 
 // Дневная фаза
@@ -492,71 +519,70 @@ function handleDayPhase(roomData) {
 }
 
 // Голосование
-function voteForPlayer(votedUid) {
+async function voteForPlayer(votedUid) {
     const roomRef = db.collection('rooms').doc(currentRoom);
-    roomRef.update({
-        [`votes.${currentUser.uid}`]: votedUid
-    })
-    .then(() => {
+    try {
+        await roomRef.update({
+            [`votes.${currentUser.uid}`]: votedUid
+        });
         alert('Ваш голос учтен.');
         phaseActions.innerHTML = `<p>Вы проголосовали за игрока.</p>`;
-        checkVotes();
-    })
-    .catch(err => {
+        await checkVotes();
+    } catch (err) {
         console.error(err);
         alert(err.message);
-    });
+    }
 }
 
 // Проверка голосов
-function checkVotes() {
+async function checkVotes() {
     const roomRef = db.collection('rooms').doc(currentRoom);
-    roomRef.get()
-        .then(doc => {
-            if (doc.exists) {
-                const roomData = doc.data();
-                const votes = roomData.votes;
-                const voteCounts = {};
+    const doc = await roomRef.get();
+    if (doc.exists) {
+        const roomData = doc.data();
+        const votes = roomData.votes;
+        const voteCounts = {};
 
-                for (let voter in votes) {
-                    const vote = votes[voter];
-                    voteCounts[vote] = (voteCounts[vote] || 0) + 1;
-                }
+        for (let voter in votes) {
+            const vote = votes[voter];
+            voteCounts[vote] = (voteCounts[vote] || 0) + 1;
+        }
 
-                const maxVotes = Math.max(...Object.values(voteCounts));
-                const candidates = Object.keys(voteCounts).filter(uid => voteCounts[uid] === maxVotes);
+        const voteEntries = Object.entries(voteCounts);
+        if (voteEntries.length === 0) return; // Нет голосов
 
-                if (candidates.length === 1) {
-                    const eliminatedUid = candidates[0];
-                    roomRef.update({
-                        eliminated: firebase.firestore.FieldValue.arrayUnion(eliminatedUid),
-                        gamePhase: 'night',
-                        votes: {}
-                    });
-                    db.collection('users').doc(eliminatedUid).get()
-                        .then(doc => {
-                            if (doc.exists) {
-                                const userData = doc.data();
-                                alert(`${userData.username} был выведен голосованием.`);
-                            }
-                        });
-                } else {
-                    // Ничья, голосование повторяется
-                    alert('Ничья. Голосование повторяется.');
-                    roomRef.update({
-                        votes: {}
-                    });
-                }
+        // Находим максимальное количество голосов
+        const maxVotes = Math.max(...voteEntries.map(entry => entry[1]));
+        // Находим всех кандидатов с максимальным количеством голосов
+        const candidates = voteEntries
+            .filter(entry => entry[1] === maxVotes)
+            .map(entry => entry[0]);
+
+        if (candidates.length === 1) {
+            const eliminatedUid = candidates[0];
+            await roomRef.update({
+                eliminated: firebase.firestore.FieldValue.arrayUnion(eliminatedUid),
+                gamePhase: 'night',
+                votes: {}
+            });
+            const eliminatedData = await db.collection('users').doc(eliminatedUid).get();
+            if (eliminatedData.exists) {
+                alert(`Игрок ${eliminatedData.data().username} был выведен голосованием.`);
             }
-        })
-        .catch(err => {
-            console.error(err);
-            alert(err.message);
-        });
+            // Проверка условий победы после голосования
+            checkWinCondition(roomData);
+        } else {
+            // Ничья, голосование повторяется
+            alert('Ничья. Голосование повторяется.');
+            await roomRef.update({
+                votes: {}
+            });
+        }
+    }
 }
 
 // Завершение игры
-function handleEndPhase(roomData) {
+async function handleEndPhase(roomData) {
     const roles = roomData.roles;
     const players = roomData.players;
     const eliminated = roomData.eliminated;
@@ -576,7 +602,7 @@ function handleEndPhase(roomData) {
         gameResult.textContent = 'Мафия победила!';
     } else {
         // Продолжаем игру
-        db.collection('rooms').doc(currentRoom).update({
+        await db.collection('rooms').doc(currentRoom).update({
             gamePhase: 'night'
         });
         return;
@@ -587,23 +613,45 @@ function handleEndPhase(roomData) {
     endScreen.classList.remove('hidden');
 }
 
+// Проверка условий победы
+async function checkWinCondition(roomData) {
+    const roles = roomData.roles;
+    const players = roomData.players;
+    const eliminated = roomData.eliminated;
+
+    let mafiaCount = 0;
+    let citizenCount = 0;
+
+    players.forEach(uid => {
+        if (eliminated.includes(uid)) return;
+        if (roles[uid] === 'Мафия') mafiaCount++;
+        else citizenCount++;
+    });
+
+    if (mafiaCount === 0 || mafiaCount >= citizenCount) {
+        // Игра завершается
+        await db.collection('rooms').doc(currentRoom).update({
+            gamePhase: 'ended'
+        });
+    }
+}
+
 // Перезапуск игры
-restartGameBtn.addEventListener('click', () => {
-    db.collection('rooms').doc(currentRoom).update({
-        gameStarted: false,
-        gamePhase: 'waiting',
-        roles: {},
-        votes: {},
-        eliminated: []
-    })
-    .then(() => {
+restartGameBtn.addEventListener('click', async () => {
+    try {
+        await db.collection('rooms').doc(currentRoom).update({
+            gameStarted: false,
+            gamePhase: 'waiting',
+            roles: {},
+            votes: {},
+            eliminated: []
+        });
         endScreen.classList.add('hidden');
         roomSelection.classList.remove('hidden');
-    })
-    .catch(err => {
+    } catch (err) {
         console.error(err);
         alert(err.message);
-    });
+    }
 });
 
 // Функция для капитализации первой буквы
